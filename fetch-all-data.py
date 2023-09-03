@@ -11,6 +11,7 @@ def create_headers(api_key):
 def handle_api_response(response, verbose):
     """Handle API response, check for errors and decode JSON."""
     if verbose:
+        print("[INFO] Handling API response...")
         print("Response Status Code:", response.status_code)
         print("Response Headers:", response.headers)
     if response.status_code != 200:
@@ -25,6 +26,8 @@ def handle_api_response(response, verbose):
         return None
 
 def get_all_rows_from_table(base_url, api_key, table_id, verbose):
+    if verbose:
+        print(f"[INFO] Fetching all rows from table with ID: {table_id}...")
     headers = create_headers(api_key)
     rows = []
     next_url = f"{base_url}database/rows/table/{table_id}/"
@@ -43,6 +46,8 @@ def get_all_rows_from_table(base_url, api_key, table_id, verbose):
     return rows
 
 def get_all_tables_from_database(base_url, api_key, database_id, verbose):
+    if verbose:
+        print(f"[INFO] Fetching all tables from database with ID: {database_id}...")
     headers = create_headers(api_key)
     response = requests.get(f"{base_url}database/tables/database/{database_id}/", headers=headers, verify=False)
     if verbose:
@@ -50,6 +55,8 @@ def get_all_tables_from_database(base_url, api_key, database_id, verbose):
     return handle_api_response(response, verbose) or []
 
 def get_all_data_from_database(base_url, api_key, database_id, verbose):
+    if verbose:
+        print(f"[INFO] Fetching all data from database with ID: {database_id}...")
     tables = get_all_tables_from_database(base_url, api_key, database_id, verbose)
     data = {}
 
