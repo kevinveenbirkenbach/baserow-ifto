@@ -8,8 +8,11 @@ def create_headers(api_key):
         "Content-Type": "application/json"
     }
 
-def handle_api_response(response):
+def handle_api_response(response, verbose):
     """Handle API response, check for errors and decode JSON."""
+    if verbose:
+        print("Response Status Code:", response.status_code)
+        print("Response Headers:", response.headers)
     if response.status_code != 200:
         print(f"Error: Received status code {response.status_code} from Baserow API.")
         print("Response content:", response.content.decode())
@@ -21,16 +24,17 @@ def handle_api_response(response):
         print("Error: Failed to decode the response as JSON.")
         return None
 
-def get_all_rows_from_table(base_url, api_key, table_id):
+def get_all_rows_from_table(base_url, api_key, table_id, verbose):
     headers = create_headers(api_key)
     rows = []
     next_url = f"{base_url}database/rows/table/{table_id}/"
 
     while next_url:
         response = requests.get(next_url, headers=headers, verify=False)
-        print("Headers:", headers)
-        print("Requesting:", next_url)
-        data = handle_api_response(response)
+        if verbose:
+            print("Headers:", headers)
+            print("Requesting:", next_url)
+        data = handle_api_response(response, verbose)
         if not data:
             break
         rows.extend(data['results'])
@@ -38,20 +42,21 @@ def get_all_rows_from_table(base_url, api_key, table_id):
 
     return rows
 
-def get_all_tables_from_database(base_url, api_key, database_id):
+def get_all_tables_from_database(base_url, api_key, database_id, verbose):
     headers = create_headers(api_key)
     response = requests.get(f"{base_url}database/tables/database/{database_id}/", headers=headers, verify=False)
-    print("Headers:", headers)
-    return handle_api_response(response) or []
+    if verbose:
+        print("Headers:", headers)
+    return handle_api_response(response, verbose) or []
 
-def get_all_data_from_database(base_url, api_key, database_id):
-    tables = get_all_tables_from_database(base_url, api_key, database_id)
+def get_all_data_from_database(base_url, api_key, database_id, verbose):
+    tables = get_all_tables_from_database(base_url, api_key, database_id, verbose)
     data = {}
 
     for table in tables:
         table_id = table['id']
         table_name = table['name']
-        data[table_name] = get_all_rows_from_table(base_url, api_key, table_id)
+        data[table_name] = get_all_rows_from_table(base_url, api_key, table_id, verbose)
 
     return data
 
@@ -60,8 +65,9 @@ if __name__ == "__main__":
     parser.add_argument("base_url", help="Base URL of your Baserow instance, e.g., https://YOUR_BASEROW_INSTANCE_URL/api/")
     parser.add_argument("api_key", help="Your Baserow API key.")
     parser.add_argument("database_id", help="ID of the Baserow database you want to fetch data from.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode for debugging.")
     
     args = parser.parse_args()
 
-    all_data = get_all_data_from_database(args.base_url, args.api_key, args.database_id)
+    all_data = get_all_data_from_database(args.base_url, args.api_key, args.database_id, args.verbose)
     print(all_data)
