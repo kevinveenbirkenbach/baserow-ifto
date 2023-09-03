@@ -68,23 +68,53 @@ def get_all_data_from_database(base_url, api_key, database_id, verbose):
 
     return data
 
+def merge_tables_on_reference(tables_data):
+    """
+    Merge tables based on references.
+    Assumes that a reference from one table to another is represented by a field in the dictionary
+    that has the same name as the referenced table and contains the ID of the referenced row.
+    """
+    # Create a mapping of table names to their rows indexed by ID
+    indexed_data = {table_name: {row['id']: row for row in rows} for table_name, rows in tables_data.items()}
+
+    # Embed referenced data into tables
+    for table_name, rows in tables_data.items():
+        for row in rows:
+            for field_name, value in row.items():
+                # Check if the field name matches another table name (i.e., it's a reference)
+                if field_name in indexed_data and value in indexed_data[field_name]:
+                    # Embed the referenced row data under the reference field
+                    row[field_name] = indexed_data[field_name][value]
+
+    return tables_data
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch all data from a Baserow database.")
     parser.add_argument("base_url", help="Base URL of your Baserow instance, e.g., https://YOUR_BASEROW_INSTANCE_URL/api/")
     parser.add_argument("api_key", help="Your Baserow API key.")
     parser.add_argument("--database_id", help="ID of the Baserow database you want to fetch data from.", default=None)
-    parser.add_argument("--table_id", help="ID of the Baserow table you want to fetch data from.", default=None)
+    parser.add_argument("--table_ids", help="IDs of the Baserow tables you want to fetch data from, separated by commas.", default=None)
+    parser.add_argument("--matrix", action="store_true", help="Merge tables based on references.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode for debugging.")
     
     args = parser.parse_args()
 
-    if not args.database_id and not args.table_id:
-        print("Error: Either database_id or table_id must be provided.")
+    if not args.database_id and not args.table_ids:
+        print("Error: Either database_id or table_ids must be provided.")
         exit(1)
 
-    if args.table_id:
-        table_data = get_all_rows_from_table(args.base_url, args.api_key, args.table_id, args.verbose)
-        print(json.dumps(table_data, indent=4))
+    if args.table_ids:
+        table_ids = args.table_ids.split(',')
+        tables_data = {}
+        for table_id in table_ids:
+            table_data = get_all_rows_from_table(args.base_url, args.api_key, table_id.strip(), args.verbose)
+            tables_data[table_id] = table_data
+
+        if args.matrix:
+            merged_data = merge_tables_on_reference(tables_data)
+            print(json.dumps(merged_data, indent=4))
+        else:
+            print(json.dumps(tables_data, indent=4))
     else:
         all_data = get_all_data_from_database(args.base_url, args.api_key, args.database_id, args.verbose)
         print(json.dumps(all_data, indent=4))
