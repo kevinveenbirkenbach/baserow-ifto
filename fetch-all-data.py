@@ -68,25 +68,42 @@ def get_all_data_from_database(base_url, api_key, database_id, verbose):
 
     return data
 
-def merge_tables_on_reference(tables_data):
-    """
-    Merge tables based on references.
-    Assumes that a reference from one table to another is represented by a field in the dictionary
-    that has the same name as the referenced table and contains the ID of the referenced row.
-    """
+def fetch_fields_for_table(base_url, api_key, table_id):
+    """Fetch fields for a given table."""
+    headers = create_headers(api_key)
+    response = requests.get(f"{base_url}database/fields/table/{table_id}/", headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"Failed to fetch fields for table {table_id}. Status code: {response.status_code}")
+
+def merge_tables_on_reference(base_url, api_key, tables_data,verbose):
+    if verbose:
+        print(
+            "Merge tables based on references.\n"
+            "Assumes that a reference from one table to another is represented by a field in the dictionary\n"
+            "that has the same name as the referenced table and contains the ID of the referenced row.\n"
+        ) 
     # Create a mapping of table names to their rows indexed by ID
     indexed_data = {table_name: {row['id']: row for row in rows} for table_name, rows in tables_data.items()}
+
+    # Fetch field information for each table and identify link fields
+    link_fields = {}
+    for table_name in tables_data:
+        fields = fetch_fields_for_table(base_url, api_key,table_name)
+        link_fields[table_name] = [field for field in fields if field['type'] == 'link_row']
 
     # Embed referenced data into tables
     for table_name, rows in tables_data.items():
         for row in rows:
-            for field_name, value in row.items():
-                # Check if the field name matches another table name (i.e., it's a reference)
-                if field_name in indexed_data and value in indexed_data[field_name]:
-                    # Embed the referenced row data under the reference field
-                    row[field_name] = indexed_data[field_name][value]
-
+            for link_field in link_fields[table_name]:
+                field_name = link_field['name']
+                referenced_table_id = link_field['link_row_table_id']
+                if field_name in row and row[field_name] in indexed_data[referenced_table_id]:
+                    if verbose: print("Embed the referenced row data under the reference field")
+                    row[field_name] = indexed_data[referenced_table_id][row[field_name]]
     return tables_data
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch all data from a Baserow database.")
@@ -96,6 +113,7 @@ if __name__ == "__main__":
     parser.add_argument("--table_ids", help="IDs of the Baserow tables you want to fetch data from, separated by commas.", default=None)
     parser.add_argument("--matrix", action="store_true", help="Merge tables based on references.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode for debugging.")
+    parser.add_argument("--quiet", action="store_true", help="Suppress output of json") 
     
     args = parser.parse_args()
 
@@ -111,10 +129,10 @@ if __name__ == "__main__":
             tables_data[table_id] = table_data
 
         if args.matrix:
-            merged_data = merge_tables_on_reference(tables_data)
-            print(json.dumps(merged_data, indent=4))
+            merged_data = merge_tables_on_reference(args.base_url, args.api_key,tables_data, args.verbose)
+            if not args.quiet: print(json.dumps(merged_data, indent=4))
         else:
-            print(json.dumps(tables_data, indent=4))
+            if not args.quiet: print(json.dumps(tables_data, indent=4))
     else:
         all_data = get_all_data_from_database(args.base_url, args.api_key, args.database_id, args.verbose)
-        print(json.dumps(all_data, indent=4))
+        if not args.quiet: print(json.dumps(all_data, indent=4))
