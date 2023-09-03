@@ -1,5 +1,6 @@
 import requests
 import argparse
+import json
 
 def create_headers(api_key):
     """Create headers for API requests."""
@@ -83,7 +84,7 @@ if __name__ == "__main__":
 
     if args.table_id:
         table_data = get_all_rows_from_table(args.base_url, args.api_key, args.table_id, args.verbose)
-        print(table_data)
+        print(json.dumps(table_data, indent=4))
     else:
         all_data = get_all_data_from_database(args.base_url, args.api_key, args.database_id, args.verbose)
-        print(all_data)
+        print(json.dumps(all_data, indent=4))
