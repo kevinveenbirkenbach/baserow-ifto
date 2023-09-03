@@ -23,8 +23,19 @@ def get_all_tables_from_database(base_url, api_key, database_id):
         "Content-Type": "application/json"
     }
     response = requests.get(f"{base_url}database/tables/database/{database_id}/", headers=headers)
-    tables = response.json()
-    return tables
+    
+    # Check if the response status code indicates success
+    if response.status_code != 200:
+        print(f"Error: Received status code {response.status_code} from Baserow API.")
+        print("Response content:", response.content.decode())
+        return []
+
+    try:
+        tables = response.json()
+        return tables
+    except requests.RequestsJSONDecodeError:
+        print("Error: Failed to decode the response as JSON.")
+        return []
 
 def get_all_data_from_database(base_url, api_key, database_id):
     tables = get_all_tables_from_database(base_url, api_key, database_id)
