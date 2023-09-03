@@ -27,7 +27,9 @@ def get_all_rows_from_table(base_url, api_key, table_id):
     next_url = f"{base_url}database/rows/table/{table_id}/"
 
     while next_url:
-        response = requests.get(next_url, headers=headers)
+        response = requests.get(next_url, headers=headers, verify=False)
+        print("Headers:", headers)
+        print("Requesting:", next_url)
         data = handle_api_response(response)
         if not data:
             break
@@ -38,7 +40,8 @@ def get_all_rows_from_table(base_url, api_key, table_id):
 
 def get_all_tables_from_database(base_url, api_key, database_id):
     headers = create_headers(api_key)
-    response = requests.get(f"{base_url}database/tables/database/{database_id}/", headers=headers)
+    response = requests.get(f"{base_url}database/tables/database/{database_id}/", headers=headers, verify=False)
+    print("Headers:", headers)
     return handle_api_response(response) or []
 
 def get_all_data_from_database(base_url, api_key, database_id):
