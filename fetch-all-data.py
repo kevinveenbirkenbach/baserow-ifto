@@ -85,19 +85,22 @@ class BaserowAPI:
 
     def merge_tables_on_reference(self, tables_data):
         if self.verbose:
-            print(
-                "Merge tables based on references.\n"
-                "Assumes that a reference from one table to another is represented by a field in the dictionary\n"
-                "that has the same name as the referenced table and contains the ID of the referenced row.\n"
-            )
+            print("Merging tables based on references...")
+
         # Create a mapping of table names to their rows indexed by ID
         indexed_data = {table_name: {row['id']: row for row in rows} for table_name, rows in tables_data.items()}
+        if self.verbose:
+            print("Indexed Data:", indexed_data)
 
         # Fetch field information for each table and identify link fields
         link_fields = {}
         for table_name in tables_data:
             fields = self.fetch_fields_for_table(table_name)
-            link_fields[table_name] = [field for field in fields if field['type'] == 'link_row']
+            link_fields_for_table = [field for field in fields if field['type'] == 'link_row']
+            link_fields[table_name] = link_fields_for_table
+        if self.verbose:
+            print("Link Fields:", link_fields)
+            print("Link Fields For Table:", link_fields_for_table)
 
         # Embed referenced data into tables
         for table_name, rows in tables_data.items():
@@ -106,9 +109,14 @@ class BaserowAPI:
                     field_name = link_field['name']
                     referenced_table_id = link_field['link_row_table_id']
                     if field_name in row and row[field_name] in indexed_data[referenced_table_id]:
-                        if self.verbose: print("Embed the referenced row data under the reference field")
+                        if self.verbose:
+                            print(f"Embedding referenced data for field {field_name} in table {table_name}")
                         row[field_name] = indexed_data[referenced_table_id][row[field_name]]
+
+        if self.verbose:
+            print("Merged Tables Data:", tables_data)
         return tables_data
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch all data from a Baserow database.")
