@@ -21,7 +21,7 @@ def main():
             handle_output(args.quiet, tables_data)
         
         if "matrix" in args.output:
-            matrix_data = api.build_matrix(tables_data)
+            matrix_data = api.build_multitable_matrix(tables_data)
             handle_output(args.quiet, matrix_data)
     
     if args.database_id:

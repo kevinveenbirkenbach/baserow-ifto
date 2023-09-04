@@ -99,14 +99,16 @@ class BaserowAPI:
             table_data = self.get_all_rows_from_table(table_id.strip())
             tables_data[table_id] = table_data
         return tables_data
-
-    def build_matrix(self, tables_data, reference_map={}):
+    
+    def build_multitable_matrix(self, tables_data):
+        for table_name, table_rows in tables_data.copy().items():
+            self.build_matrix(tables_data,table_name, table_rows)
+            
+    def build_matrix(self, tables_data, table_name, table_rows, reference_map={}):
         """Build a matrix with linked rows filled recursively."""
         reference_map_child = reference_map.copy()
-
-        for table_name, table_rows in tables_data.copy().items():
-            self.process_link_fields(table_name, tables_data, reference_map_child)
-            self.fill_cells_with_related_content(table_name, table_rows, reference_map_child)
+        self.process_link_fields(table_name, tables_data, reference_map_child)
+        self.fill_cells_with_related_content(table_name, table_rows, reference_map_child)
 
         return tables_data
 
@@ -135,7 +137,7 @@ class BaserowAPI:
                             self.print_verbose_message(f"Skipped {related_cell_identifier}. Already implemented")
                             break
                         
-                        reference_map_child[table_column_name]["embeded"].add(related_cell_identifier)
+                        reference_map_child[table_column_name]["embeded"].append(related_cell_identifier)
                         
     
     def generate_related_cell_identifier(self, table_id, table_column_id, table_row_id):
