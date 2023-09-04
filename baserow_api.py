@@ -75,47 +75,65 @@ class BaserowAPI:
         return data
 
     def fetch_fields_for_table(self, table_id):
-        """Fetch fields for a given table."""
+        self.print_verbose_message("Fetch fields for a given table.")
         response = self.request_response(f"database/fields/table/{table_id}/")
         if response.status_code == 200:
             return response.json()
         raise Exception(f"Failed to fetch fields for table {table_id}. Status code: {response.status_code}")
-
-    def merge_tables_on_reference(self, tables_data):
-        self.print_verbose_message("Merging tables based on references...")
-        indexed_data = self.index_tables_by_id(tables_data)
-        link_fields = self.get_link_fields_for_all_tables(tables_data)
-        self.embed_referenced_data_into_tables(tables_data, indexed_data, link_fields)
-        self.print_verbose_message(f"Merged Tables Data: {tables_data}")
-        return tables_data
-
-    def index_tables_by_id(self, tables_data):
-        indexed_data = {table_name: {row['id']: row for row in rows} for table_name, rows in tables_data.items()}
-        self.print_verbose_message(f"Indexed Data: {indexed_data}")
-        return indexed_data
+        
 
     def get_link_fields_for_all_tables(self, tables_data):
         link_fields = {}
         for table_name in tables_data:
             link_fields_for_table = self.get_link_fields_for_table(table_name)
             link_fields[table_name] = link_fields_for_table
-            self.print_verbose_message(f"Link Fields For Table: {link_fields_for_table}")
-        self.print_verbose_message(f"Link Fields: {link_fields}")
         return link_fields
 
     def get_link_fields_for_table(self, table_name):
         fields = self.fetch_fields_for_table(table_name)
         return [field for field in fields if field['type'] == 'link_row']
 
-    def embed_referenced_data_into_tables(self, tables_data, indexed_data, link_fields):
-        for table_name, rows in tables_data.items():
-            for row in rows:
-                self.embed_data_for_row(row, table_name, indexed_data, link_fields)
+    def get_tables(self,table_ids):
+        tables_data = {}
+        for table_id in table_ids:
+            table_data = self.get_all_rows_from_table(table_id.strip())
+            tables_data[table_id] = table_data
+        return tables_data
 
-    def embed_data_for_row(self, row, table_name, indexed_data, link_fields):
-        for link_field in link_fields[table_name]:
-            field_name = link_field['name']
-            referenced_table_id = link_field['link_row_table_id']
-            if field_name in row and row[field_name] in indexed_data[referenced_table_id]:
-                self.print_verbose_message(f"Embedding referenced data for field {field_name} in table {table_name}")
-                row[field_name] = indexed_data[referenced_table_id][row[field_name]]
+    def build_matrix(self, tables_data, reference_map={}):
+        """Build a matrix with linked rows filled recursively."""
+        reference_map_child=reference_map.copy()
+        for table_name, table_rows in list(tables_data.items()):
+            link_fields=self.get_link_fields_for_table(table_name)
+            #create a copy of reference map, so that it is just used for this path
+            
+            for link_field in link_fields:
+                link_row_table_id=link_field["link_row_table_id"]
+                # Load table data if not loaded
+                if not link_row_table_id in tables_data:
+                    tables_data[link_row_table_id]=self.get_all_rows_from_table(link_row_table_id) 
+
+                link_field_name="field_" + str(link_field["id"])
+                if not link_field_name in reference_map_child:
+                    reference_map_child[link_field_name]=link_field
+                    reference_map_child[link_field_name]["embeded_by"]=[]
+ 
+        self.print_verbose_message(f"reference_map_child: {reference_map_child}")
+ 
+        for table_name, table_rows in list(tables_data.items()):    
+            # Fill cells with related content
+            for table_row in table_rows:
+                self.print_verbose_message(f"table_row: {table_row}");
+                for table_column_name, table_cell_content in table_row.items():
+                    # Don't iterate twice over the same part
+                    if table_column_name in reference_map_child:
+                        cell_identifier="table_" + table_name + "_" + table_column_name + "_row_" + str(table_row["id"])
+                        self.print_verbose_message(f"cell_identifier: {cell_identifier}");
+                        embeder_field_name=reference_map_child[table_column_name]["link_row_related_field_id"]
+                        self.print_verbose_message(f"embeder_field_name: {embeder_field_name}");
+                        if cell_identifier in reference_map_child[embeder_field_name]["embeded_by"]:
+                            self.print_verbose_message(f"NOT EMBEDED!");
+                        break
+                    
+        return tables_data
+

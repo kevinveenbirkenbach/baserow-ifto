@@ -17,12 +17,12 @@ def main():
             linked_fields_data = api.get_link_fields_for_all_tables(tables_data)
             handle_output(args.quiet, linked_fields_data)
             
-        if "matrix" in args.output:
-            merged_data = api.merge_tables_on_reference(tables_data)
-            handle_output(args.quiet, merged_data)
-                
         if "tables" in args.output:
             handle_output(args.quiet, tables_data)
+        
+        if "matrix" in args.output:
+            matrix_data = api.build_matrix(tables_data)
+            handle_output(args.quiet, matrix_data)
     
     if args.database_id:
         all_data = api.get_all_data_from_database(args.database_id)
@@ -42,11 +42,7 @@ def parse_arguments():
 
 def fetch_table_data(api, table_ids_str):
     table_ids = table_ids_str.split(',')
-    tables_data = {}
-    for table_id in table_ids:
-        table_data = api.get_all_rows_from_table(table_id.strip())
-        tables_data[table_id] = table_data
-    return tables_data
+    return api.get_tables(table_ids)
 
 if __name__ == "__main__":
     main()
