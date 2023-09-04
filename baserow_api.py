@@ -102,38 +102,59 @@ class BaserowAPI:
 
     def build_matrix(self, tables_data, reference_map={}):
         """Build a matrix with linked rows filled recursively."""
-        reference_map_child=reference_map.copy()
-        for table_name, table_rows in list(tables_data.items()):
-            link_fields=self.get_link_fields_for_table(table_name)
-            #create a copy of reference map, so that it is just used for this path
-            
-            for link_field in link_fields:
-                link_row_table_id=link_field["link_row_table_id"]
-                # Load table data if not loaded
-                if not link_row_table_id in tables_data:
-                    tables_data[link_row_table_id]=self.get_all_rows_from_table(link_row_table_id) 
+        reference_map_child = reference_map.copy()
 
-                link_field_name="field_" + str(link_field["id"])
-                if not link_field_name in reference_map_child:
-                    reference_map_child[link_field_name]=link_field
-                    reference_map_child[link_field_name]["embeded_by"]=[]
- 
-        self.print_verbose_message(f"reference_map_child: {reference_map_child}")
- 
-        for table_name, table_rows in list(tables_data.items()):    
-            # Fill cells with related content
-            for table_row in table_rows:
-                self.print_verbose_message(f"table_row: {table_row}");
-                for table_column_name, table_cell_content in table_row.items():
-                    # Don't iterate twice over the same part
-                    if table_column_name in reference_map_child:
-                        cell_identifier="table_" + table_name + "_" + table_column_name + "_row_" + str(table_row["id"])
-                        self.print_verbose_message(f"cell_identifier: {cell_identifier}");
-                        embeder_field_name=reference_map_child[table_column_name]["link_row_related_field_id"]
-                        self.print_verbose_message(f"embeder_field_name: {embeder_field_name}");
-                        if cell_identifier in reference_map_child[embeder_field_name]["embeded_by"]:
-                            self.print_verbose_message(f"NOT EMBEDED!");
-                        break
-                    
+        for table_name, table_rows in tables_data.copy().items():
+            self.process_link_fields(table_name, tables_data, reference_map_child)
+            self.fill_cells_with_related_content(table_name, table_rows, reference_map_child)
+
         return tables_data
+
+    def fill_cells_with_related_content(self, table_name, table_rows, reference_map_child):
+        """Fill cells with related content."""
+        for table_row in table_rows:
+            self.print_verbose_message(f"table_row: {table_row}")
+            """Check if the iteration should be skipped based on conditions."""
+            for table_column_name, table_cell_content in table_row.items():
+                if table_column_name in reference_map_child:
+                    cell_identifier = self.generate_cell_identifier(table_name, table_column_name, table_row)
+                    embeder_field_id = reference_map_child[table_column_name]["link_row_related_field_id"]
+
+                    self.print_verbose_message(f"cell_identifier: {cell_identifier}")
+                    self.print_verbose_message(f"embeder_field_id: {embeder_field_id}")
+
+                    if cell_identifier in reference_map_child[table_column_name]["embeded"]:
+                        self.print_verbose_message(f"NOT EMBEDED!")
+    
+    def generate_embeded_cell_identifier(self, table_id, table_column_id, table_row_id):
+        return self.generate_cell_identifier(table_id, "field_" + str(table_column_name_id), table_row_id);
+
+    def generate_cell_identifier(self, table_name, table_column_name, table_row):
+        """Generate cell identifier."""
+        return "table_" + table_name + "_" + table_column_name + "_row_" + str(table_row["id"])
+
+    def process_link_fields(self, table_name, tables_data, reference_map_child):
+        """Process link fields for a given table."""
+        link_fields = self.get_link_fields_for_table(table_name)
+
+        for link_field in link_fields:
+            self.load_table_data_if_not_present(link_field, tables_data)
+            self.update_reference_map(link_field, reference_map_child)
+
+    def load_table_data_if_not_present(self, link_field, tables_data):
+        """Load table data if it's not already loaded."""
+        link_row_table_id = link_field["link_row_table_id"]
+
+        if link_row_table_id not in tables_data:
+            tables_data[link_row_table_id] = self.get_all_rows_from_table(link_row_table_id)
+
+    def update_reference_map(self, link_field, reference_map_child):
+        """Update the reference map with the link field data."""
+        link_field_name = "field_" + str(link_field["id"])
+
+        if link_field_name not in reference_map_child:
+            reference_map_child[link_field_name] = link_field
+            reference_map_child[link_field_name]["embeded"] = []
+ 
+       
 
