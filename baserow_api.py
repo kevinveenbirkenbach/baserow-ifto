@@ -114,24 +114,38 @@ class BaserowAPI:
         """Fill cells with related content."""
         for table_row in table_rows:
             self.print_verbose_message(f"table_row: {table_row}")
-            """Check if the iteration should be skipped based on conditions."""
             for table_column_name, table_cell_content in table_row.items():
                 if table_column_name in reference_map_child:
-                    cell_identifier = self.generate_cell_identifier(table_name, table_column_name, table_row)
-                    embeder_field_id = reference_map_child[table_column_name]["link_row_related_field_id"]
+                    #Iterriere über Zelleneinträge
+                    #cell_identifier = self.generate_cell_identifier(table_name, table_column_name, table_row)
+                    #self.print_verbose_message(f"cell_identifier: {cell_identifier}")
+                    
+                    
+                    link_row_table_id = reference_map_child[table_column_name]["link_row_table_id"]
+                    self.print_verbose_message(f"link_row_table_id: {link_row_table_id}")
+                    
+                    link_row_related_field_id = reference_map_child[table_column_name]["link_row_related_field_id"]
+                    self.print_verbose_message(f"link_row_related_field_id: {link_row_related_field_id}")
+                    
+                    for entry_id,entry_content in table_cell_content:
+                        related_cell_identifier=self.generate_related_cell_identifier(link_row_table_id,link_row_related_field_id,entry_id)
+                        self.print_verbose_message(f"related_cell_identifier: {related_cell_identifier}")
 
-                    self.print_verbose_message(f"cell_identifier: {cell_identifier}")
-                    self.print_verbose_message(f"embeder_field_id: {embeder_field_id}")
-
-                    if cell_identifier in reference_map_child[table_column_name]["embeded"]:
-                        self.print_verbose_message(f"NOT EMBEDED!")
+                        if related_cell_identifier in reference_map_child[table_column_name]["embeded"]:
+                            self.print_verbose_message(f"Skipped {related_cell_identifier}. Already implemented")
+                            break
+                        
+                        reference_map_child[table_column_name]["embeded"].add(related_cell_identifier)
+                        
     
-    def generate_embeded_cell_identifier(self, table_id, table_column_id, table_row_id):
-        return self.generate_cell_identifier(table_id, "field_" + str(table_column_name_id), table_row_id);
+    def generate_related_cell_identifier(self, table_id, table_column_id, table_row_id):
+        return self.generate_cell_identifier(table_id, "field_" + str(table_column_id), table_row_id);
 
-    def generate_cell_identifier(self, table_name, table_column_name, table_row):
-        """Generate cell identifier."""
-        return "table_" + table_name + "_" + table_column_name + "_row_" + str(table_row["id"])
+    def generate_cell_identifier(self, table_name, table_column_name, table_row_id):
+        table_name=str(table_name)    
+        table_column_name=str(table_column_name)    
+        table_row_id=str(table_row_id)    
+        return "table_" + table_name + "_" + table_column_name + "_row_" + table_row_id
 
     def process_link_fields(self, table_name, tables_data, reference_map_child):
         """Process link fields for a given table."""
