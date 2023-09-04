@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("--table_ids", help="IDs of the Baserow tables you want to fetch data from, separated by commas.", default=None)
     parser.add_argument("--matrix", action="store_true", help="Merge tables based on references.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode for debugging.")
+    parser.add_argument("--linked_fields", action="store_true", help="Outputs the linked tables")
     parser.add_argument("--quiet", action="store_true", help="Suppress output of json")
 
     args = parser.parse_args()

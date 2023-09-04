@@ -40,10 +40,10 @@ class BaserowAPI:
         if self.verbose:
             print(f"[INFO] Fetching all rows from table with ID: {table_id}...")
         rows = []
-        next_url = f"{self.base_url}database/rows/table/{table_id}/"
+        next_url = "database/rows/table/{table_id}/"
 
         while next_url:
-            response = requests.get(next_url, headers=self.headers)
+            request_response(next_url)
             self.print_verbose_message("Requesting:", next_url)
             data = self.handle_api_response(response)
             if not data:
@@ -53,9 +53,12 @@ class BaserowAPI:
 
         return rows
 
+    def request_response(self,command):
+        return requests.get(f"{self.base_url}{command}", headers=self.headers)
+
     def get_all_tables_from_database(self, database_id):
         self.print_verbose_message("[INFO] Fetching all tables from database with ID: {database_id}...")
-        response = requests.get(f"{self.base_url}database/tables/database/{database_id}/", headers=self.headers)
+        response = request_response("database/tables/database/{database_id}/")
         return self.handle_api_response(response) or []
 
     def get_all_data_from_database(self, database_id):
