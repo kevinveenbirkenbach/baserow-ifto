@@ -13,7 +13,6 @@ def main():
     args = parse_arguments()
     api = BaserowAPI(args.base_url, args.api_key, args.verbose)
     data_processor = DataProcessor(api, args.verbose)
-    matrix_builder = MatrixBuilder(data_processor, args.verbose)
     
     if args.table_ids:
         tables_data = fetch_table_data(data_processor, args.table_ids)
@@ -26,7 +25,8 @@ def main():
             handle_output(args.quiet, tables_data)
         
         if "matrix" in args.output:
-            matrix_data = matrix_builder.build_multitable_matrix(tables_data)
+            matrix_builder = MatrixBuilder(data_processor,tables_data, args.verbose)
+            matrix_data = matrix_builder.build_multitable_matrix()
             handle_output(args.quiet, matrix_data)
     
     if args.database_id:
