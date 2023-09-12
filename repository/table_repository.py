@@ -1,22 +1,13 @@
+from .api_repository import ApiRepository
 """
-This class, DataProcessor, is responsible for interacting with a given API to fetch and process data related to databases and tables. It provides functionalities to:
+This class, Table, is responsible for interacting with a given API to fetch and process data related to tables. It provides functionalities to:
 
 Retrieve all rows from a specified table.
-Fetch all tables associated with a given database.
-Extract all data from a specified database.
 Fetch specific fields for a table.
 Identify and retrieve 'link_row' type fields for a table and for all tables in the provided data.
 Additionally, it offers a verbose mode to print detailed messages during its operations.
 """
-class DataProcessor:
-    def __init__(self, api, verbose=False):
-        self.api = api
-        self.verbose = verbose
-
-    def print_verbose_message(self, message):
-        if self.verbose:
-            print(message)
-
+class TableRepository(ApiRepository):
     def get_all_rows_from_table(self, table_id):
         rows = []
         next_url = f"database/rows/table/{table_id}/"
@@ -37,22 +28,6 @@ class DataProcessor:
             table_data = self.get_all_rows_from_table(table_id.strip())
             tables_data[table_id] = table_data
         return tables_data
-
-
-    def get_all_tables_from_database(self, database_id):
-        response = self.api.request_response(f"database/tables/database/{database_id}/")
-        return self.api.handle_api_response(response) or []
-
-    def get_all_data_from_database(self, database_id):
-        tables = self.get_all_tables_from_database(database_id)
-        data = {}
-
-        for table in tables:
-            table_id = table['id']
-            table_name = table['name']
-            data[table_name] = self.get_all_rows_from_table(table_id)
-
-        return data
 
     def fetch_fields_for_table(self, table_id):
         response = self.api.request_response(f"database/fields/table/{table_id}/")

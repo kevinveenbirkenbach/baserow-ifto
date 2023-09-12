@@ -1,4 +1,4 @@
-from data_processor import DataProcessor
+from repository.table_repository import TableRepository
 
 class MatrixBuilder:
     def __init__(self, data_processor, tables_data, verbose=False):

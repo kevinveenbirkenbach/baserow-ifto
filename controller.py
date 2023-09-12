@@ -1,7 +1,7 @@
 import argparse
 import json
-from baserow_api import BaserowAPI
-from data_processor import DataProcessor
+from api.baserow_api import BaserowAPI
+from repository.table_repository import TableRepository
 from matrix_builder import MatrixBuilder
 import view
 
@@ -12,7 +12,7 @@ def handle_output(quiet, data):
 def main():
     args = parse_arguments()
     api = BaserowAPI(args.base_url, args.api_key, args.verbose)
-    data_processor = DataProcessor(api, args.verbose)
+    data_processor = TableRepository(api, args.verbose)
     
     if args.table_ids:
         tables_data = fetch_table_data(data_processor, args.table_ids)

@@ -28,6 +28,7 @@ class BaserowAPI:
 
         try:
             return response.json()
-        except requests.RequestsJSONDecodeError:
+        except:
+            print({response.content})
             print("Error: Failed to decode the response as JSON.")
             return None
