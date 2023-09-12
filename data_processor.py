@@ -1,3 +1,13 @@
+"""
+This class, DataProcessor, is responsible for interacting with a given API to fetch and process data related to databases and tables. It provides functionalities to:
+
+Retrieve all rows from a specified table.
+Fetch all tables associated with a given database.
+Extract all data from a specified database.
+Fetch specific fields for a table.
+Identify and retrieve 'link_row' type fields for a table and for all tables in the provided data.
+Additionally, it offers a verbose mode to print detailed messages during its operations.
+"""
 class DataProcessor:
     def __init__(self, api, verbose=False):
         self.api = api
